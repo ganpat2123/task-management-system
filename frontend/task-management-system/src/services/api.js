@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-    baseURL: "http://localhost:8080/api"
+    baseURL: "https://task-management-system-1-givy.onrender.com/api"
 });
 
 export default API;
