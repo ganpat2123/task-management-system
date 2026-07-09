@@ -1,0 +1,8 @@
+backend/node_modules
+frontend/task-management-system/node_modules
+
+backend/.env
+
+frontend/task-management-system/dist
+
+.DS_Store
