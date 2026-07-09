@@ -1,0 +1,17 @@
+.nav-link {
+    color: white !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    margin-left: 10px;
+    border-radius: 6px;
+    padding: 8px 15px !important;
+}
+
+.nav-link:hover {
+    background-color: white;
+    color: #2563EB !important;
+}
+
+.navbar-brand:hover {
+    color: #FFD700 !important;
+}
