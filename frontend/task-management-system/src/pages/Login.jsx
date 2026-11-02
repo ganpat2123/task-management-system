@@ -1,122 +1,151 @@
+
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate
+} from "react-router-dom";
 import API from "../services/api";
 
 function Login() {
+  const navigate = useNavigate();
+  const location = useLocation();
 
-    const navigate = useNavigate();
+  const [form, setForm] = useState({
+    username: "",
+    password: ""
+  });
 
-    const [formData, setFormData] = useState({
-        username: "",
-        password: ""
-    });
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-    const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-    };
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    const handleSubmit = async (e) => {
+    try {
+      const res = await API.post("/auth/login", {
+        username: form.username.trim(),
+        password: form.password
+      });
 
-        e.preventDefault();
+      if (!res.data.token) {
+        throw new Error("Login token missing");
+      }
 
-        try {
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem(
+        "taskUser",
+        JSON.stringify(res.data.user || {
+          username: form.username.trim()
+        })
+      );
 
-            const res = await API.post("/auth/login", formData);
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+        "Login failed. Please check your details."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            localStorage.setItem("token", res.data.token);
+  return (
+    <main className="auth-page">
+      <div className="auth-card">
+        <Link to="/" className="brand auth-brand">
+          <span className="brand-icon">✓</span>
+          <span>TaskFlow</span>
+        </Link>
 
-            alert(res.data.message);
-
-            navigate("/dashboard");
-
-        } catch (err) {
-
-            alert(err.response?.data?.message || "Login Failed");
-
-        }
-
-    };
-
-    return (
-
-        <div className="container mt-5">
-
-            <div className="row justify-content-center">
-
-                <div className="col-md-5">
-
-                    <div className="card shadow">
-
-                        <div className="card-body">
-
-                            <h2 className="text-center mb-4">
-                                Login
-                            </h2>
-
-                            <form onSubmit={handleSubmit}>
-
-                                <div className="mb-3">
-
-                                    <label>Username</label>
-
-                                    <input
-                                        type="text"
-                                        name="username"
-                                        className="form-control"
-                                        value={formData.username}
-                                        onChange={handleChange}
-                                    />
-
-                                </div>
-
-                                <div className="mb-3">
-
-                                    <label>Password</label>
-
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        className="form-control"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        autoComplete="current-password"
-                                    />
-
-                                </div>
-
-                                <button
-                                    className="btn btn-success w-100"
-                                >
-                                    Login
-                                </button>
-
-                            </form>
-
-                            <p className="mt-3">
-
-                                Don't have an account?
-
-                                <Link to="/signup">
-                                    Signup
-                                </Link>
-
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
+        <div className="auth-heading">
+          <h1>Welcome back</h1>
+          <p>Log in to manage your daily tasks.</p>
         </div>
 
-    );
+        {location.state?.message && (
+          <div className="alert alert-success">
+            {location.state.message}
+          </div>
+        )}
 
+        {error && (
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={submit}>
+          <div className="form-group">
+            <label htmlFor="loginUsername">
+              Username or Email
+            </label>
+            <input
+              id="loginUsername"
+              className="form-control"
+              placeholder="Enter username or email"
+              autoComplete="username"
+              value={form.username}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  username: e.target.value
+                })
+              }
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="loginPassword">Password</label>
+            <input
+              id="loginPassword"
+              className="form-control"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              autoComplete="current-password"
+              value={form.password}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  password: e.target.value
+                })
+              }
+              required
+            />
+          </div>
+
+          <label className="check-label">
+            <input
+              type="checkbox"
+              checked={showPassword}
+              onChange={(e) =>
+                setShowPassword(e.target.checked)
+              }
+            />
+            Show password
+          </label>
+
+          <button
+            type="submit"
+            className="btn-main w-100"
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Log In"}
+          </button>
+        </form>
+
+        <p className="auth-bottom">
+          Don't have an account?{" "}
+          <Link to="/signup">Sign up</Link>
+        </p>
+      </div>
+    </main>
+  );
 }
 
 export default Login;

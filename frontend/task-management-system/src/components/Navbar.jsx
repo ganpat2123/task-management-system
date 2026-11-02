@@ -1,66 +1,58 @@
-import { Link } from "react-router-dom";
+
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import "./Navbar.css";
 
 function Navbar() {
+  const navigate = useNavigate();
+  const loggedIn = Boolean(localStorage.getItem("token"));
 
-    return (
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("taskUser");
+    navigate("/login", { replace: true });
+  };
 
-        <nav
-            className="navbar navbar-expand-lg navbar-dark shadow fixed-top"
-            style={{
-                background: "linear-gradient(90deg, #2563EB, #1E40AF)"
-            }}
-        >
+  return (
+    <header className="topbar">
+      <div className="container topbar-inner">
+        <Link to="/" className="brand">
+          <span className="brand-icon">✓</span>
+          <span>TaskFlow</span>
+        </Link>
 
-            <div className="container">
+        <nav className="nav-links">
+          <NavLink to="/">Home</NavLink>
 
-                <Link className="navbar-brand fw-bold" to="/">
-                    Task Manager
-                </Link>
+          {loggedIn ? (
+            <>
+              <NavLink to="/dashboard">
+                Dashboard
+              </NavLink>
 
-                <button
-                    className="navbar-toggler"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#navbar"
-                >
-                    <span className="navbar-toggler-icon"></span>
-                </button>
+              <button
+                type="button"
+                className="nav-logout"
+                onClick={logout}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <NavLink to="/login">Login</NavLink>
 
-                <div
-                    className="collapse navbar-collapse"
-                    id="navbar"
-                >
-
-                    <ul className="navbar-nav ms-auto">
-
-                        <li className="nav-item">
-                            <Link className="nav-link" to="/">
-                                Home
-                            </Link>
-                        </li>
-
-                        <li className="nav-item">
-                            <Link className="nav-link" to="/login">
-                                Login
-                            </Link>
-                        </li>
-
-                        <li className="nav-item">
-                            <Link className="nav-link" to="/signup">
-                                Signup
-                            </Link>
-                        </li>
-
-                    </ul>
-
-                </div>
-
-            </div>
-
+              <Link
+                to="/signup"
+                className="nav-signup"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </nav>
-
-    );
-
+      </div>
+    </header>
+  );
 }
 
 export default Navbar;

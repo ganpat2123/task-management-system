@@ -1,34 +1,22 @@
+
 import { Link } from "react-router-dom";
 
 function NotFound() {
+  return (
+    <main className="not-found">
+      <div>
+        <span className="error-number">404</span>
+        <h1>Page not found</h1>
+        <p>
+          The page you are looking for does not exist.
+        </p>
 
-    return (
-
-        <div className="container text-center py-5">
-
-            <h1 className="display-1 text-danger fw-bold">
-                 🚫 404
-            </h1>
-
-            <h2 className="mb-3">
-                Page Not Found
-            </h2>
-
-            <p className="text-muted mb-4">
-                Sorry, the page you are looking for doesn't exist.
-            </p>
-
-            <Link
-                to="/"
-                className="btn btn-primary"
-            >
-                Back To Home
-            </Link>
-
-        </div>
-
-    );
-
+        <Link to="/" className="btn-main">
+          Back to Home
+        </Link>
+      </div>
+    </main>
+  );
 }
 
 export default NotFound;

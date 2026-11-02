@@ -1,27 +1,18 @@
+
 function Footer() {
+  return (
+    <footer className="site-footer">
+      <div className="container footer-inner">
+        <span>
+          © 2026 TaskFlow. All rights reserved.
+        </span>
 
-    return (
-        <>
-            <div className="my-5"></div>
-
-            <footer
-                className="text-white text-center py-3 fixed-bottom"
-                style={{
-                    background: "linear-gradient(90deg, #2563EB, #1E40AF)"
-                }}
-            >
-                <p className="mb-0">
-
-                    © 2026 Task Management System |
-                    Developed by Ganpat Devganiya
-
-                </p>
-
-            </footer>
-        </>
-
-    );
-
+        <span>
+          Built with React, Node.js and MySQL
+        </span>
+      </div>
+    </footer>
+  );
 }
 
 export default Footer;

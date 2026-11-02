@@ -1,17 +1,116 @@
-.nav-link {
-    color: white !important;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    margin-left: 10px;
-    border-radius: 6px;
-    padding: 8px 15px !important;
+
+.topbar {
+  width: 100%;
+  background: #ffffff;
+  border-bottom: 1px solid #e9edf5;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.nav-link:hover {
-    background-color: white;
-    color: #2563EB !important;
+.topbar-inner {
+  min-height: 78px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
 }
 
-.navbar-brand:hover {
-    color: #FFD700 !important;
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #192443;
+  text-decoration: none;
+  letter-spacing: -0.7px;
+}
+
+.brand:hover {
+  color: #192443;
+}
+
+.brand-icon {
+  height: 36px;
+  width: 36px;
+  border-radius: 11px;
+  background: #5848e9;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 5px 14px #5848e933;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.nav-links a {
+  color: #64708a;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.nav-links a.active,
+.nav-links a:hover {
+  color: #5848e9;
+}
+
+.nav-links .nav-signup {
+  background: #5848e9;
+  color: white;
+  padding: 11px 19px;
+  border-radius: 10px;
+}
+
+.nav-links .nav-signup:hover {
+  background: #4636d5;
+  color: white;
+}
+
+.nav-logout {
+  background: #fff0f0;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  color: #ce3b46;
+  font-weight: 600;
+}
+
+.nav-logout:hover {
+  background: #ffe1e1;
+}
+
+@media (max-width: 540px) {
+  .topbar-inner {
+    min-height: 68px;
+  }
+
+  .brand {
+    font-size: 19px;
+  }
+
+  .brand-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .nav-links {
+    gap: 11px;
+  }
+
+  .nav-links a,
+  .nav-logout {
+    font-size: 12px;
+  }
+
+  .nav-links .nav-signup {
+    padding: 9px 11px;
+  }
 }

@@ -1,0 +1,111 @@
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+:root {
+  font-family: "Inter", Arial, sans-serif;
+  color: #18233b;
+  background: #f7f8fc;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #f7f8fc;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  transition: 0.2s ease;
+}
+
+.form-control,
+.form-select {
+  border: 1px solid #dce2ee;
+  padding: 12px 14px;
+  border-radius: 11px;
+  background-color: #ffffff;
+  font-size: 14px;
+  color: #25304a;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #7265ee;
+  box-shadow: 0 0 0 3px #7265ee1c;
+}
+
+.form-group {
+  margin-bottom: 19px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #34405c;
+  margin-bottom: 8px;
+}
+
+.btn-main,
+.btn-soft {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  border-radius: 11px;
+  padding: 12px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  min-height: 46px;
+  transition: 0.2s;
+}
+
+.btn-main {
+  background: #5848e9;
+  color: #ffffff;
+}
+
+.btn-main:hover {
+  background: #4534d5;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn-main:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-soft {
+  background: #ffffff;
+  border-color: #dfe4f0;
+  color: #394765;
+}
+
+.btn-soft:hover {
+  color: #5848e9;
+  border-color: #a9a2f6;
+}
+
+.alert {
+  font-size: 13px;
+  border-radius: 10px;
+}

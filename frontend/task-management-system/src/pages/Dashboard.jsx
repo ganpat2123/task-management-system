@@ -1,396 +1,470 @@
-import { useEffect, useState } from "react";
+
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
+import Navbar from "../components/Navbar";
+
+const emptyForm = {
+  title: "",
+  description: "",
+  status: "Todo"
+};
+
+const statuses = ["Todo", "In Progress", "Completed"];
 
 function Dashboard() {
+  const navigate = useNavigate();
 
-    const navigate = useNavigate();
+  const [tasks, setTasks] = useState([]);
+  const [form, setForm] = useState(emptyForm);
+  const [editId, setEditId] = useState(null);
+  const [filter, setFilter] = useState("All");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-    const [tasks, setTasks] = useState([]);
+  let user = {};
+  try {
+    user = JSON.parse(
+      localStorage.getItem("taskUser") || "{}"
+    );
+  } catch {
+    user = {};
+  }
 
-    const [formData, setFormData] = useState({
-        title: "",
-        description: "",
-        status: "Todo"
-    });
-
-    const [editId, setEditId] = useState(null);
-    const [filter, setFilter] = useState("");
-
-    const token = localStorage.getItem("token");
-
-    useEffect(() => {
-
-        if (!token) {
-            navigate("/");
-            return;
-        }
-
-        fetchTasks();
-
-    }, [filter]);
-
-    const fetchTasks = async () => {
-
-        try {
-
-            let url = "/tasks";
-
-            if (filter) {
-                url += `?status=${encodeURIComponent(filter)}`;
-            }
-
-            const res = await API.get(url, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-
-            setTasks(res.data.tasks);
-
-        } catch (err) {
-            console.log(err);
-        }
-
-    };
-
-    const handleChange = (e) => {
-
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-
-    };
-
-    const handleSubmit = async (e) => {
-
-        e.preventDefault();
-
-        try {
-
-            if (editId) {
-
-                await API.put(`/tasks/${editId}`, formData, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                });
-
-                setEditId(null);
-
-            } else {
-
-                await API.post("/tasks", formData, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                });
-
-            }
-
-            setFormData({
-                title: "",
-                description: "",
-                status: "Todo"
-            });
-
-            fetchTasks();
-
-        } catch (err) {
-            alert(err.response?.data?.message);
-        }
-
-    };
-
-    const handleEdit = (task) => {
-
-        setEditId(task.id);
-
-        setFormData({
-            title: task.title,
-            description: task.description,
-            status: task.status
-        });
-
-    };
-
-    const handleDelete = async (id) => {
-
-        if (!window.confirm("Delete this task?")) return;
-
-        try {
-
-            await API.delete(`/tasks/${id}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-
-            fetchTasks();
-
-        } catch (err) {
-            alert(err.response?.data?.message);
-        }
-
-    };
-
-    const logout = () => {
-
+  const handleApiError = useCallback(
+    (err, fallback) => {
+      if (err.response?.status === 401) {
         localStorage.removeItem("token");
+        localStorage.removeItem("taskUser");
+        navigate("/login", { replace: true });
+        return;
+      }
 
-        navigate("/");
+      setError(
+        err.response?.data?.message || fallback
+      );
+    },
+    [navigate]
+  );
 
+  const fetchTasks = useCallback(async () => {
+    setLoading(true);
+
+    try {
+      const res = await API.get("/tasks");
+      setTasks(
+        Array.isArray(res.data.tasks)
+          ? res.data.tasks
+          : []
+      );
+      setError("");
+    } catch (err) {
+      handleApiError(err, "Unable to load tasks.");
+    } finally {
+      setLoading(false);
+    }
+  }, [handleApiError]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  const change = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const clearForm = () => {
+    setForm(emptyForm);
+    setEditId(null);
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!form.title.trim() || !form.description.trim()) {
+      return setError(
+        "Please enter title and description."
+      );
+    }
+
+    setSaving(true);
+
+    const data = {
+      title: form.title.trim(),
+      description: form.description.trim(),
+      status: form.status
     };
 
-    return (
-<div className="container py-5">
+    try {
+      if (editId !== null) {
+        await API.put(`/tasks/${editId}`, data);
+        setSuccess("Task updated successfully.");
+      } else {
+        await API.post("/tasks", data);
+        setSuccess("Task added successfully.");
+      }
 
-    {/* Header */}
-    <div className="card border-0 shadow-lg rounded-4 mb-4">
+      clearForm();
+      await fetchTasks();
+    } catch (err) {
+      handleApiError(err, "Unable to save task.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
-        <div className="card-body d-flex justify-content-between align-items-center bg-primary text-white rounded-4 p-4">
+  const startEdit = (task) => {
+    setEditId(task.id);
+    setForm({
+      title: task.title,
+      description: task.description,
+      status: task.status
+    });
+    setError("");
+    setSuccess("");
 
-            <div>
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  };
 
-                <h2 className="fw-bold mb-1">📋 Task Dashboard</h2>
+  const deleteTask = async (id) => {
+    if (!window.confirm("Delete this task?")) {
+      return;
+    }
 
+    setError("");
+    setSuccess("");
+
+    try {
+      await API.delete(`/tasks/${id}`);
+      setSuccess("Task deleted successfully.");
+      await fetchTasks();
+    } catch (err) {
+      handleApiError(err, "Unable to delete task.");
+    }
+  };
+
+  const updateStatus = async (task, status) => {
+    setError("");
+    setSuccess("");
+
+    try {
+      await API.put(`/tasks/${task.id}`, {
+        title: task.title,
+        description: task.description,
+        status
+      });
+
+      setTasks((previous) =>
+        previous.map((item) =>
+          item.id === task.id
+            ? { ...item, status }
+            : item
+        )
+      );
+
+      setSuccess("Task status updated.");
+    } catch (err) {
+      handleApiError(err, "Unable to update status.");
+    }
+  };
+
+  const total = tasks.length;
+  const todo = tasks.filter(
+    (task) => task.status === "Todo"
+  ).length;
+  const inProgress = tasks.filter(
+    (task) => task.status === "In Progress"
+  ).length;
+  const completed = tasks.filter(
+    (task) => task.status === "Completed"
+  ).length;
+
+  const visibleTasks =
+    filter === "All"
+      ? tasks
+      : tasks.filter((task) => task.status === filter);
+
+  return (
+    <div className="app-shell">
+      <Navbar />
+
+      <main className="dashboard container">
+        <div className="dashboard-heading">
+          <div>
+            <span className="eyebrow">MY WORKSPACE</span>
+            <h1>
+              Welcome back
+              {user.username ? `, ${user.username}` : ""}!
+            </h1>
+            <p>
+              Stay organized and keep your tasks on track.
+            </p>
+          </div>
+
+          <button
+            className="btn-soft"
+            onClick={fetchTasks}
+            disabled={loading}
+          >
+            ↻ Refresh
+          </button>
+        </div>
+
+        <div className="stats-grid">
+          {[
+            { label: "Total Tasks", count: total, icon: "▦", color: "purple" },
+            { label: "To Do", count: todo, icon: "○", color: "blue" },
+            { label: "In Progress", count: inProgress, icon: "◷", color: "orange" },
+            { label: "Completed", count: completed, icon: "✓", color: "green" }
+          ].map((stat) => (
+            <div className="stat-card" key={stat.label}>
+              <div className={`stat-icon ${stat.color}`}>
+                {stat.icon}
+              </div>
+              <div className="stat-number">
+                {stat.count}
+              </div>
+              <div className="stat-label">
+                {stat.label}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {error && (
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="alert alert-success">
+            {success}
+          </div>
+        )}
+
+        <div className="dashboard-grid">
+          <section className="panel task-form-panel">
+            <div className="panel-heading">
+              <h2>
+                {editId !== null
+                  ? "Edit Task"
+                  : "Create New Task"}
+              </h2>
+              <p>
+                {editId !== null
+                  ? "Update your task details."
+                  : "Add something to your to-do list."}
+              </p>
             </div>
 
-            <button
-                className="btn btn-light text-danger fw-bold px-4"
-                onClick={logout}
-            >
-                Logout
-            </button>
+            <form onSubmit={submit}>
+              <div className="form-group">
+                <label htmlFor="taskTitle">
+                  Task Title
+                </label>
 
-        </div>
+                <input
+                  id="taskTitle"
+                  type="text"
+                  name="title"
+                  className="form-control"
+                  placeholder="e.g. Complete React project"
+                  value={form.title}
+                  onChange={change}
+                  maxLength={255}
+                  required
+                />
+              </div>
 
-    </div>
+              <div className="form-group">
+                <label htmlFor="taskDescription">
+                  Description
+                </label>
 
-    {/* Filter */}
-    <div className="card border-0 shadow rounded-4 mb-4">
+                <textarea
+                  id="taskDescription"
+                  name="description"
+                  className="form-control"
+                  placeholder="Write task details..."
+                  value={form.description}
+                  onChange={change}
+                  rows={4}
+                  required
+                />
+              </div>
 
-        <div className="card-body d-flex justify-content-between align-items-center">
+              <div className="form-group">
+                <label htmlFor="taskStatus">
+                  Status
+                </label>
 
-            <h5 className="fw-bold mb-0">🔍 Filter Tasks</h5>
-
-            <select
-                className="form-select w-25 shadow-sm"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-            >
-
-                <option value="">All Tasks</option>
-                <option value="Todo">Todo</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-
-            </select>
-
-        </div>
-
-    </div>
-
-    {/* Form */}
-    <div className="card border-0 shadow-lg rounded-4 mb-4">
-
-        <div className="card-header bg-success text-white py-3 rounded-top-4">
-
-            <h4 className="fw-bold mb-0">
-
-                {editId ? "✏ Update Task" : "➕ Add New Task"}
-
-            </h4>
-
-        </div>
-
-        <div className="card-body p-4">
-
-            <form onSubmit={handleSubmit}>
-
-                <div className="mb-4">
-
-                    <label className="form-label fw-semibold">
-                        Task Title
-                    </label>
-
-                    <input
-                        type="text"
-                        className="form-control form-control-lg"
-                        placeholder="Enter Task Title"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleChange}
-                    />
-
-                </div>
-
-                <div className="mb-4">
-
-                    <label className="form-label fw-semibold">
-                        Description
-                    </label>
-
-                    <textarea
-                        rows="4"
-                        className="form-control"
-                        placeholder="Enter Task Description"
-                        name="description"
-                        value={formData.description}
-                        onChange={handleChange}
-                    />
-
-                </div>
-
-                <div className="mb-4">
-
-                    <label className="form-label fw-semibold">
-                        Status
-                    </label>
-
-                    <select
-                        className="form-select form-select-lg"
-                        name="status"
-                        value={formData.status}
-                        onChange={handleChange}
-                    >
-
-                        <option>Todo</option>
-                        <option>In Progress</option>
-                        <option>Completed</option>
-
-                    </select>
-
-                </div>
-
-                <button
-                    className={`btn btn-lg w-100 fw-bold ${
-                        editId ? "btn-warning text-dark" : "btn-success"
-                    }`}
+                <select
+                  id="taskStatus"
+                  name="status"
+                  className="form-select"
+                  value={form.status}
+                  onChange={change}
                 >
-                    {editId ? "Update Task" : "Add Task"}
+                  {statuses.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="btn-main w-100"
+                disabled={saving}
+              >
+                {saving
+                  ? "Saving..."
+                  : editId !== null
+                    ? "Save Changes"
+                    : "+ Add Task"}
+              </button>
+
+              {editId !== null && (
+                <button
+                  type="button"
+                  className="btn-soft w-100 mt-2"
+                  onClick={clearForm}
+                >
+                  Cancel Edit
                 </button>
-
+              )}
             </form>
+          </section>
 
+          <section className="panel task-list-panel">
+            <div className="task-list-header">
+              <div>
+                <h2>My Tasks</h2>
+                <p>
+                  Manage everything in one place.
+                </p>
+              </div>
+
+              <select
+                className="form-select task-filter"
+                value={filter}
+                onChange={(e) =>
+                  setFilter(e.target.value)
+                }
+                aria-label="Filter tasks"
+              >
+                <option value="All">All Tasks</option>
+                {statuses.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {loading ? (
+              <div className="empty-state">
+                Loading your tasks...
+              </div>
+            ) : visibleTasks.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">▤</div>
+                <h3>No tasks found</h3>
+                <p>
+                  {filter === "All"
+                    ? "Create your first task to get started."
+                    : "No tasks match this status."}
+                </p>
+              </div>
+            ) : (
+              <div className="tasks-list">
+                {visibleTasks.map((task) => (
+                  <article
+                    className="task-item"
+                    key={task.id}
+                  >
+                    <div className="task-top">
+                      <h3>{task.title}</h3>
+                      <span
+                        className={`status-badge ${
+                          task.status === "Todo"
+                            ? "status-todo"
+                            : task.status === "In Progress"
+                              ? "status-progress"
+                              : "status-completed"
+                        }`}
+                      >
+                        {task.status}
+                      </span>
+                    </div>
+
+                    <p className="task-description">
+                      {task.description}
+                    </p>
+
+                    <div className="task-actions">
+                      <select
+                        className="form-select task-status-select"
+                        aria-label={`Status for ${task.title}`}
+                        value={task.status}
+                        onChange={(e) =>
+                          updateStatus(
+                            task,
+                            e.target.value
+                          )
+                        }
+                      >
+                        {statuses.map((status) => (
+                          <option
+                            value={status}
+                            key={status}
+                          >
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+
+                      <div className="action-buttons">
+                        <button
+                          type="button"
+                          className="btn-edit"
+                          onClick={() => startEdit(task)}
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn-delete"
+                          onClick={() =>
+                            deleteTask(task.id)
+                          }
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
-
+      </main>
     </div>
-
-    {/* Table */}
-    <div className="card border-0 shadow-lg rounded-4">
-
-        <div className="card-header bg-dark text-white py-3 rounded-top-4">
-
-            <h4 className="fw-bold mb-0">
-                📑 Task List
-            </h4>
-
-        </div>
-
-        <div className="table-responsive">
-
-            <table className="table table-striped table-hover align-middle mb-0">
-
-                <thead className="table-primary text-center">
-
-                    <tr>
-
-                        <th>Title</th>
-
-                        <th>Description</th>
-
-                        <th>Status</th>
-
-                        <th width="220">Action</th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    {
-                        tasks.length === 0 ?
-
-                            <tr>
-
-                                <td
-                                    colSpan="4"
-                                    className="text-center py-5 fw-bold text-secondary"
-                                >
-                                    📭 No Tasks Found
-                                </td>
-
-                            </tr>
-
-                            :
-
-                            tasks.map((task) => (
-
-                                <tr key={task.id}>
-
-                                    <td className="fw-semibold text-center">
-                                        {task.title}
-                                    </td>
-
-                                    <td className="text-center">
-                                        {task.description}
-                                    </td>
-
-                                    <td className="text-center">
-
-                                        <span
-                                            className={`badge rounded-pill px-3 py-2 ${
-                                                task.status === "Completed"
-                                                    ? "bg-success"
-                                                    : task.status === "In Progress"
-                                                    ? "bg-warning text-dark"
-                                                    : "bg-secondary"
-                                            }`}
-                                        >
-                                            {task.status}
-                                        </span>
-
-                                    </td>
-
-                                    <td className="text-center">
-
-                                        <button
-                                            className="btn btn-warning btn-sm fw-semibold me-2"
-                                            onClick={() => handleEdit(task)}
-                                        >
-                                            ✏ Edit
-                                        </button>
-
-                                        <button
-                                            className="btn btn-danger btn-sm fw-semibold"
-                                            onClick={() => handleDelete(task.id)}
-                                        >
-                                            🗑 Delete
-                                        </button>
-
-                                    </td>
-
-                                </tr>
-
-                            ))
-
-                    }
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-    </div>
-
-</div>
-
-    );
-
+  );
 }
 
 export default Dashboard;
