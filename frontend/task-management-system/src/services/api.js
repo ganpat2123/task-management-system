@@ -4,7 +4,7 @@ import axios from "axios";
 const API = axios.create({
   baseURL:
     import.meta.env.VITE_API_URL ||
-    "https://task-management-system-1-givy.onrender.com/api",
+    "https://task-management-system-ec7i.onrender.com/api",
   timeout: 30000
 });
 
